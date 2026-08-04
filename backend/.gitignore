@@ -1,0 +1,22 @@
+# Environment
+.env
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+
+# IDE
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Composer (future)
+vendor/
+
+# Node (future)
+node_modules/
