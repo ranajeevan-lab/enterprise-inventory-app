@@ -117,3 +117,10 @@ The public key is safe to distribute because it is only used for verification. T
 Answer:
 
 GitHub Secrets encrypt sensitive data and expose it only during workflow execution, preventing the private key from being stored in the repository.
+
+
+Why do enterprise GitHub Actions workflows use environment variables for values like image names?
+
+Expected Answer:
+
+Environment variables centralize configuration, reduce duplication, make workflows easier to maintain, and minimize errors when values such as image names, registry URLs, or regions change.

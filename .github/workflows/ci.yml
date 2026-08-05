@@ -6,6 +6,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    
+    env:
+      IMAGE_NAME: docker.io/jeevanrana78/enterprise-inventory-app
+      IMAGE_TAG: ${{ github.sha }}
 
     steps:
       - name: Checkout Repository
@@ -27,14 +31,14 @@ jobs:
         working-directory: backend
         run: |
           docker build \
-            -t docker.io/jeevanrana78/enterprise-inventory-app:latest \
-            -t docker.io/jeevanrana78/enterprise-inventory-app:${{ github.sha }} .
+            -t ${{ env.IMAGE_NAME }}:latest \
+           -t ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} .
 
       - name: Verify Docker Images
         run: |
           docker images
-          docker image inspect docker.io/jeevanrana78/enterprise-inventory-app:latest
-          docker image inspect docker.io/jeevanrana78/enterprise-inventory-app:${{ github.sha }}
+          docker image inspect ${{ env.IMAGE_NAME }}:latest
+          docker image inspect ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -45,7 +49,7 @@ jobs:
       - name: Run Trivy Scan
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: docker.io/jeevanrana78/enterprise-inventory-app:${{ github.sha }}
+          image-ref: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
           format: table
           exit-code: 0
           
@@ -53,12 +57,12 @@ jobs:
         uses: docker/scout-action@v1
         with:
           command: quickview
-          image:  docker.io/jeevanrana78/enterprise-inventory-app:${{ github.sha }}
+          image: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
         with:
-          image:  docker.io/jeevanrana78/enterprise-inventory-app:${{ github.sha }}
+          image: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
           format: spdx-json
           output-file: sbom.spdx.json
 
@@ -70,8 +74,8 @@ jobs:
 
       - name: Push Docker Images
         run: |
-          docker push docker.io/jeevanrana78/enterprise-inventory-app:latest
-          docker push docker.io/jeevanrana78/enterprise-inventory-app:${{ github.sha }}
+          docker push ${{ env.IMAGE_NAME }}:latest
+          docker push ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@v3
@@ -86,11 +90,11 @@ jobs:
         run: |
           cosign sign \
             --key cosign.key \
-            docker.io/jeevanrana78/enterprise-inventory-app:${{ github.sha }} \
+            ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} \
             --yes
 
       - name: Verify Signature
         run: |
           cosign verify \
             --key security/cosign.pub \
-            docker.io/jeevanrana78/enterprise-inventory-app:${{ github.sha }}
+           ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
