@@ -42,6 +42,12 @@ jobs:
           image-ref: backend-web:latest
           format: table
           exit-code: 0
+          
+      - name: Docker Scout Scan
+        uses: docker/scout-action@v1
+        with:
+          command: quickview
+          image: backend-web:latest
 
       - name: Test GitHub Secret
         run: echo "${{ secrets.TEST_SECRET }}"

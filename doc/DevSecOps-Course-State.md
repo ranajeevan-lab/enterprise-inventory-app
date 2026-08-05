@@ -517,3 +517,455 @@ See you in the next lesson! 🚀
 
 
 
+Excellent. I like the direction we're taking. From now on, we'll organize the course into \*\*Modules → Lessons\*\*, just like an enterprise training program.
+
+
+
+\---
+
+
+
+\# Module 4 – DevSecOps with GitHub Actions
+
+
+
+\## Lesson 4.1 – Hadolint ✅
+
+
+
+\*\*Objective\*\*
+
+
+
+Learn Dockerfile quality validation.
+
+
+
+\### Topics Covered
+
+
+
+\* What is Hadolint?
+
+\* Dockerfile linting
+
+\* DL3007 (`latest` tag)
+
+\* CI Failure Lab
+
+\* Best practices
+
+
+
+\---
+
+
+
+\## Lesson 4.2 – Trivy ✅
+
+
+
+\*\*Objective\*\*
+
+
+
+Learn container vulnerability scanning.
+
+
+
+\### Topics Covered
+
+
+
+\* Trivy architecture
+
+\* Vulnerability scan
+
+\* CVE
+
+\* Severity levels
+
+\* Reading Trivy reports
+
+\* Base image vulnerabilities
+
+
+
+\---
+
+
+
+\## Lesson 4.3 – Docker Authentication ✅
+
+
+
+\*\*Objective\*\*
+
+
+
+Securely authenticate GitHub Actions with Docker Hub.
+
+
+
+\### Topics Covered
+
+
+
+\* GitHub Secrets
+
+\* Secret masking
+
+\* Access Tokens
+
+\* Least Privilege
+
+\* Docker Login Action
+
+
+
+\---
+
+
+
+\# Next Lesson
+
+
+
+\# Module 4
+
+
+
+\## Lesson 4.4 – Docker Scout
+
+
+
+\*\*Objective\*\*
+
+
+
+Analyze Docker images and receive remediation recommendations.
+
+
+
+\---
+
+
+
+\## What You'll Learn
+
+
+
+\### Part 1
+
+
+
+Docker Scout Architecture
+
+
+
+\### Part 2
+
+
+
+How Docker Scout differs from Trivy
+
+
+
+\### Part 3
+
+
+
+Docker Scout GitHub Action
+
+
+
+\### Part 4
+
+
+
+Understanding the report
+
+
+
+\### Part 5
+
+
+
+Enterprise best practices
+
+
+
+\### Part 6
+
+
+
+CI Failure Lab
+
+
+
+\---
+
+
+
+\# Lesson Roadmap
+
+
+
+```text
+
+Dockerfile
+
+&#x20;    │
+
+&#x20;    ▼
+
+Hadolint
+
+&#x20;    │
+
+&#x20;    ▼
+
+Docker Build
+
+&#x20;    │
+
+&#x20;    ▼
+
+Trivy
+
+&#x20;    │
+
+&#x20;    ▼
+
+Docker Scout   ← Lesson 4.4
+
+&#x20;    │
+
+&#x20;    ▼
+
+SBOM
+
+&#x20;    │
+
+&#x20;    ▼
+
+Cosign
+
+```
+
+
+
+\---
+
+
+
+\# Before We Write Any YAML
+
+
+
+I want to explain \*\*one enterprise concept\*\*.
+
+
+
+\## Why doesn't Trivy replace Docker Scout?
+
+
+
+Many people think:
+
+
+
+> "Trivy already found vulnerabilities. Why do I need Docker Scout?"
+
+
+
+This is one of the most common interview questions.
+
+
+
+\---
+
+
+
+\## Enterprise Example
+
+
+
+Suppose Trivy reports:
+
+
+
+```text
+
+CRITICAL : 18
+
+HIGH     : 77
+
+```
+
+
+
+Trivy tells you:
+
+
+
+> "You have these vulnerabilities."
+
+
+
+Docker Scout tells you:
+
+
+
+> "If you update from `php:8.3-apache` to `php:8.3.7-apache`, you can reduce many of these vulnerabilities."
+
+
+
+That's the key difference:
+
+
+
+| Trivy            | Docker Scout                    |
+
+| ---------------- | ------------------------------- |
+
+| Detects problems | Suggests improvements           |
+
+| CVE-focused      | Lifecycle-focused               |
+
+| Security scan    | Security + maintenance guidance |
+
+
+
+Think of it like this:
+
+
+
+\* \*\*Trivy = Doctor\*\* → Diagnoses what's wrong.
+
+\* \*\*Docker Scout = Health Advisor\*\* → Suggests how to improve your health over time.
+
+
+
+\---
+
+
+
+\# Enterprise Pipeline (Final Vision)
+
+
+
+By the end of Sprint 3, your pipeline will be:
+
+
+
+```text
+
+Git Push
+
+&#x20;   │
+
+&#x20;   ▼
+
+Checkout Repository
+
+&#x20;   │
+
+&#x20;   ▼
+
+Hadolint
+
+&#x20;   │
+
+&#x20;   ▼
+
+Build Docker Image
+
+&#x20;   │
+
+&#x20;   ▼
+
+Verify Docker Image
+
+&#x20;   │
+
+&#x20;   ▼
+
+Login Docker Hub
+
+&#x20;   │
+
+&#x20;   ▼
+
+Trivy
+
+&#x20;   │
+
+&#x20;   ▼
+
+Docker Scout
+
+&#x20;   │
+
+&#x20;   ▼
+
+Generate SBOM
+
+&#x20;   │
+
+&#x20;   ▼
+
+Cosign Sign Image
+
+&#x20;   │
+
+&#x20;   ▼
+
+Push to Amazon ECR
+
+```
+
+
+
+\---
+
+
+
+\# One Change I'd Like to Make
+
+
+
+From this point onward, I'd like to make our project even more \*\*enterprise-oriented\*\*.
+
+
+
+Instead of just adding tools, we'll discuss \*\*why a company would adopt them\*\*.
+
+
+
+For every new tool, we'll answer these five questions:
+
+
+
+1\. \*\*What problem does it solve?\*\*
+
+2\. \*\*Why do enterprises use it?\*\*
+
+3\. \*\*What are the alternatives?\*\*
+
+4\. \*\*How is it integrated into CI/CD?\*\*
+
+5\. \*\*What interview questions are commonly asked about it?\*\*
+
+
+
+This way, by the time you complete the course, you'll not only know \*\*how\*\* to build the pipeline—you'll also be able to explain the design decisions behind it in interviews and on the job.
+
+
+
+I think this approach matches your learning style much better because you've consistently asked \*"why"\* rather than just \*"what command do I run?"\*
+
+
+
+
+
