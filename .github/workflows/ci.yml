@@ -1,3 +1,5 @@
+
+
 name: Enterprise CI Pipeline
 
 on:
@@ -11,9 +13,23 @@ jobs:
       IMAGE_NAME: docker.io/jeevanrana78/enterprise-inventory-app
       IMAGE_TAG: ${{ github.sha }}
 
+# ==========================================================
+# Source Control
+# - Checkout application source code
+# ==========================================================
+
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v5
+
+# ==========================================================
+# Quality Gate
+# - Dockerfile linting (Hadolint)
+# - Dockerfile best practice validation
+# ==========================================================
+
+
 
       - name: Run Hadolint
         uses: hadolint/hadolint-action@v3.1.0
@@ -27,12 +43,21 @@ jobs:
           docker --version
           php --version
 
+# ==========================================================
+# Build
+# - Display runner information
+# - Build Docker image
+# - Create latest and immutable image tags
+# - Verify Docker image
+# ==========================================================
+
+
       - name: Build Docker Image
         working-directory: backend
         run: |
           docker build \
             -t ${{ env.IMAGE_NAME }}:latest \
-           -t ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} .
+            -t ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} .
 
       - name: Verify Docker Images
         run: |
@@ -40,11 +65,16 @@ jobs:
           docker image inspect ${{ env.IMAGE_NAME }}:latest
           docker image inspect ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
+
+# ==========================================================
+# Security Scanning
+# - Trivy vulnerability scan
+# - Docker Scout analysis
+# - SBOM generation
+# - Upload SBOM artifact
+# ==========================================================
+
+
      
       - name: Run Trivy Scan
         uses: aquasecurity/trivy-action@v0.36.0
@@ -72,10 +102,34 @@ jobs:
           name: sbom
           path: sbom.spdx.json
 
+
+
+# ==========================================================
+# Publish
+# - Docker Hub authentication
+# - Push latest image
+# - Push immutable Git SHA image
+# ==========================================================
+      - name: Login to Docker Hub
+              uses: docker/login-action@v3
+              with:
+                username: ${{ secrets.DOCKER_USERNAME }}
+                password: ${{ secrets.DOCKER_TOKEN }}
+
+
       - name: Push Docker Images
         run: |
           docker push ${{ env.IMAGE_NAME }}:latest
           docker push ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+
+# ==========================================================
+# Supply Chain Security
+# - Install Cosign
+# - Restore signing key
+# - Sign container image
+# - Verify image signature
+# ==========================================================
+
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@v3
