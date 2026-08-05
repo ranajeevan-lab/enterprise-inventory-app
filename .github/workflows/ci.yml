@@ -49,7 +49,15 @@ jobs:
           command: quickview
           image: backend-web:latest
 
-      - name: Test GitHub Secret
-        run: echo "${{ secrets.TEST_SECRET }}"
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: backend-web:latest
+          format: spdx-json
+          output-file: sbom.spdx.json
 
-      
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.spdx.json
