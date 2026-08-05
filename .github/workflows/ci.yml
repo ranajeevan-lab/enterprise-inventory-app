@@ -17,3 +17,7 @@ jobs:
           whoami
           docker --version
           php --version
+
+      - name: Build Docker Image
+        working-directory: backend
+        run: docker build -t backend-web .
