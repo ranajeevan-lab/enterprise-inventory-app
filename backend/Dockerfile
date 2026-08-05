@@ -1,4 +1,4 @@
-FROM php:8.3-apache
+FROM php:8.3-apacheff
 
 # OCI Image Metadata
 LABEL org.opencontainers.image.title="Enterprise Inventory" \
