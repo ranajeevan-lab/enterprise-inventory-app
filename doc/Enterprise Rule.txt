@@ -1,0 +1,47 @@
+Enterprise Rule
+
+Whenever we add something to a Docker image:
+
+USER → verify with whoami
+HEALTHCHECK → verify with docker inspect
+LABEL → verify with docker image inspect
+
+aws eks describe-nodegroup   --cluster-name dev-eks-cluster   --nodegroup-name dev-node-group   --region ap-south-1   --query "nodegroup.nodeRole"
+
+
+aws eks describe-cluster  --name dev-eks-cluster   --region ap-south-1   --query "cluster.resourcesVpcConfig"
+
+
+aws cloudtrail lookup-events   --lookup-attributes AttributeKey=EventName,AttributeValue=CreateCluster   --max-results 5
+
+
+aws eks update-kubeconfig  --name dev-eks-cluster  --region ap-south-1   --alias dev-eks-cluster
+
+
+aws eks describe-cluster   --name dev-eks-cluster   --region ap-south-1   --query "cluster.platformVersion"
+
+
+ssh -T git@github.com
+git log --oneline --graph --decorate --all
+git branch -D feature/frontend  # delete branch
+git push origin --delete feature/backend  #delete from hub
+git branch -vv
+
+ground rule for new branch first time 
+
+Our Project Standard (Locked)
+Creating a New Feature
+git checkout main
+git pull origin main
+
+git checkout -b feature/<feature-name>
+
+git push -u origin feature/<feature-name>   ✅ Once
+
+
+
+Enterprise Comparison
+Tool	Checks	Question it answers
+Hadolint	Dockerfile	Is my Dockerfile written correctly?
+Trivy	Docker Image	Are there known vulnerabilities?
+Docker Scout	Image lifecycle	Can I improve or update this image?

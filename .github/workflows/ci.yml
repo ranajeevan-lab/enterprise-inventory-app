@@ -36,3 +36,8 @@ jobs:
           image-ref: backend-web:latest
           format: table
           exit-code: 0
+
+      - name: Test GitHub Secret
+        run: echo "${{ secrets.TEST_SECRET }}"
+
+      
