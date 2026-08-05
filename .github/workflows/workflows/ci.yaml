@@ -9,7 +9,7 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Show Runner Information
         run: |
@@ -17,7 +17,3 @@ jobs:
           whoami
           docker --version
           php --version
-
-      - name: Build Docker Image
-        working-directory: backend
-        run: docker build -t backend-web .
