@@ -24,3 +24,8 @@ jobs:
 
       - name: Verify Docker Image
         run: docker images
+
+      - name: Run Hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: backend/Dockerfile
