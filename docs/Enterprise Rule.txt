@@ -45,3 +45,13 @@ Tool	Checks	Question it answers
 Hadolint	Dockerfile	Is my Dockerfile written correctly?
 Trivy	Docker Image	Are there known vulnerabilities?
 Docker Scout	Image lifecycle	Can I improve or update this image?
+
+
+Typical GitHub Secrets:
+
+Secret	Purpose
+AWS_ACCESS_KEY_ID	AWS Login
+AWS_SECRET_ACCESS_KEY	AWS Authentication
+DOCKERHUB_TOKEN	Docker Login
+COSIGN_PRIVATE_KEY	Image Signing
+COSIGN_PASSWORD	Unlock Private Key

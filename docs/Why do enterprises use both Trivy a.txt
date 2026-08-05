@@ -1,0 +1,76 @@
+Why do enterprises use both Trivy and Docker Scout?
+
+Expected Answer
+
+Trivy identifies vulnerabilities in the image, while Docker Scout provides lifecycle analysis and recommends safer base images and remediation strategies. They complement each other rather than replacing one another.
+
+
+What is the biggest advantage of Docker Scout over Trivy?
+
+Expected Answer
+
+Trivy identifies vulnerabilities already present in an image, while Docker Scout also recommends updated base images and helps maintain image health over time.
+
+That answer is suitable for an enterprise DevOps interview.
+
+
+What is an SBOM?
+
+Expected Answer
+
+An SBOM (Software Bill of Materials) is a machine-readable inventory of all software components, libraries, and packages included in an application or container image. It improves supply-chain transparency and helps organizations identify affected software when vulnerabilities are disclosed.
+
+
+📚 Lesson Summary
+Tool			Primary Purpose
+Hadolint		Dockerfile Quality
+Trivy			Vulnerability Detection
+Docker Scout		Image Improvement
+SBOM			Software Inventory
+Cosign			Digital Signature
+
+Question
+
+What information does an SBOM contain?
+
+Expected Answer
+
+An SBOM contains an inventory of the software components included in an application or container image, including packages, versions, relationships, licenses, and metadata. It is used for software supply-chain visibility and compliance.
+
+
+Why do enterprises use Cosign?
+
+Expected Answer
+
+Cosign digitally signs container images and related artifacts such as SBOMs. Before deployment, the signature is verified to ensure the artifact has not been altered and originates from a trusted source.
+
+
+Technology			Why Used
+Cosign				Image signing
+Notary v2			OCI artifact signing
+SLSA				Build provenance
+in-toto	Supply 			chain attestations
+Sigstore			Trust infrastructure
+
+
+Why do we have two keys?
+
+Expected Answer
+
+The private key is used to create the digital signature and must remain secret. The public key is shared so anyone can verify the signature without being able to create one.
+
+
+Typical GitHub Secrets:
+
+Secret	Purpose
+AWS_ACCESS_KEY_ID	AWS Login
+AWS_SECRET_ACCESS_KEY	AWS Authentication
+DOCKERHUB_TOKEN	Docker Login
+COSIGN_PRIVATE_KEY	Image Signing
+COSIGN_PASSWORD	Unlock Private Key
+
+Why do we store the Cosign private key in GitHub Secrets instead of committing it to Git?
+
+Expected Answer
+
+GitHub Secrets encrypt sensitive information and make it available only during workflow execution. Committing a private signing key to Git would expose it to anyone with repository access, compromising the trust of all signed artifacts.

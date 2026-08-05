@@ -4,22 +4,22 @@
 # Logs
 *.log
 
-# Temporary files
+# Temporary
 *.tmp
 *.bak
 
 # IDE
 .vscode/
 
-# OS files
+# OS
 .DS_Store
 Thumbs.db
 
-# Composer (future)
-vendor/
-
-# Node (future)
+# Node
 node_modules/
 
-# Cosign
-cosign.key
+# Composer
+vendor/
+
+# Security
+security/cosign.key
