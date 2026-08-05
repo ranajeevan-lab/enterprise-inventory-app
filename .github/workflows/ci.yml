@@ -26,27 +26,26 @@ jobs:
       - name: Build Docker Image
         working-directory: backend
         run: |
-          docker build -t jeevanrana78/enterprise-inventory-app:latest .
+          docker build \
+            -t docker.io/jeevanrana78/enterprise-inventory-app:latest \
+            -t docker.io/jeevanrana78/enterprise-inventory-app:${{ github.sha }} .
 
-      - name: Verify Docker Image
+      - name: Verify Docker Images
         run: |
           docker images
-          docker image inspect jeevanrana78/enterprise-inventory-app:latest
+          docker image inspect docker.io/jeevanrana78/enterprise-inventory-app:latest
+          docker image inspect docker.io/jeevanrana78/enterprise-inventory-app:${{ github.sha }}
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
-
-      - name: Push Docker Image
-        run: |
-          docker push jeevanrana78/enterprise-inventory-app:latest
      
       - name: Run Trivy Scan
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: jeevanrana78/enterprise-inventory-app:latest
+          image-ref: docker.io/jeevanrana78/enterprise-inventory-app:${{ github.sha }}
           format: table
           exit-code: 0
           
@@ -54,12 +53,12 @@ jobs:
         uses: docker/scout-action@v1
         with:
           command: quickview
-          image: jeevanrana78/enterprise-inventory-app:latest
+          image:  docker.io/jeevanrana78/enterprise-inventory-app:${{ github.sha }}
 
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
         with:
-          image: jeevanrana78/enterprise-inventory-app:latest
+          image:  docker.io/jeevanrana78/enterprise-inventory-app:${{ github.sha }}
           format: spdx-json
           output-file: sbom.spdx.json
 
@@ -68,3 +67,30 @@ jobs:
         with:
           name: sbom
           path: sbom.spdx.json
+
+      - name: Push Docker Images
+          run: |
+            docker push docker.io/jeevanrana78/enterprise-inventory-app:latest
+            docker push docker.io/jeevanrana78/enterprise-inventory-app:${{ github.sha }}
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+          
+      - name: Restore Cosign Private Key
+        run: |
+          echo "${{ secrets.COSIGN_PRIVATE_KEY }}" > cosign.key
+
+      - name: Sign Docker Image
+        env:
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        run: |
+          cosign sign \
+            --key cosign.key \
+            docker.io/jeevanrana78/enterprise-inventory-app:${{ github.sha }} \
+            --yes
+
+      - name: Verify Signature
+        run: |
+          cosign verify \
+            --key security/cosign.pub \
+            docker.io/jeevanrana78/enterprise-inventory-app:${{ github.sha }}

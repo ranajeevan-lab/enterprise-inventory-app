@@ -74,3 +74,46 @@ Why do we store the Cosign private key in GitHub Secrets instead of committing i
 Expected Answer
 
 GitHub Secrets encrypt sensitive information and make it available only during workflow execution. Committing a private signing key to Git would expose it to anyone with repository access, compromising the trust of all signed artifacts.
+
+
+Question
+
+Why do enterprise CI/CD pipelines prefer immutable image tags instead of only using latest?
+
+Expected Answer
+
+Immutable tags, such as the Git commit SHA, uniquely identify each build. They improve traceability, simplify rollbacks, and ensure that deployments and signatures always reference the exact image that was built.
+
+
+
+Why is cosign.pub committed to Git but cosign.key is not?
+
+Expected Answer
+
+The public key is used only for verification and can be shared safely. The private key is used to create signatures and must remain confidential. Exposing the private key would allow attackers to produce trusted-looking signatures.
+
+
+Why do enterprises push both latest and ${{ github.sha }}?
+
+Expected Answer
+
+latest provides a convenient moving tag for development and testing. The Git commit SHA provides an immutable tag that uniquely identifies a build, making deployments, rollbacks, security scans, and image signing deterministic and traceable.
+
+
+1. Why do we sign the ${{ github.sha }} image instead of latest?
+
+Answer:
+
+${{ github.sha }} is immutable and uniquely identifies a specific build. Signing an immutable tag ensures the signature always refers to the exact image that was built and tested.
+
+2. Why is cosign.pub stored in Git but cosign.key is not?
+
+Answer:
+
+The public key is safe to distribute because it is only used for verification. The private key creates signatures and must remain confidential.
+
+3. Why do we use GitHub Secrets for the private key?
+
+Answer:
+
+GitHub Secrets encrypt sensitive data and expose it only during workflow execution, preventing the private key from being stored in the repository.
