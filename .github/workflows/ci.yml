@@ -29,3 +29,10 @@ jobs:
 
       - name: Verify Docker Image
         run: docker images
+     
+      - name: Run Trivy Scan
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: backend-web:latest
+          format: table
+          exit-code: 0
