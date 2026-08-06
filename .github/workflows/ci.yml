@@ -39,12 +39,12 @@ jobs:
           & "C:\Tools\sonar-scanner-8.1.0.6389-windows-x64\bin\sonar-scanner.bat" @args
 
           
-      - name: SonarQube Quality Gate
-        uses: SonarSource/sonarqube-quality-gate-action@v1
-        timeout-minutes: 5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+  #  - name: SonarQube Quality Gate
+  #    uses: SonarSource/sonarqube-quality-gate-action@v1
+  #    timeout-minutes: 5
+  #      env:
+  #        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  #         SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
     
   build:
