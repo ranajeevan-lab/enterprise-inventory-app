@@ -124,7 +124,19 @@ jobs:
           docker push ${{ env.IMAGE_NAME }}:latest
           docker push ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
-#
+# ==========================================================
+# GitOps Automation
+# - Clone GitOps repository
+# ==========================================================
+
+      - name: Clone GitOps Repository
+        run: |
+          git clone https://x-access-token:${{ secrets.GITOPS_PAT }}@github.com/ranajeevan-lab/enterprise-inventory-gitops.git
+
+      - name: Verify GitOps Repository
+        run: |
+          ls -la
+          ls -la enterprise-inventory-gitops
 
 # ==========================================================
 # Supply Chain Security
