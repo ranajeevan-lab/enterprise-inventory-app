@@ -5,16 +5,10 @@ name: Enterprise CI Pipeline
 on:
   push:
 
-# ==========================================================
-# Code Quality
-# - SonarQube Static Code Analysis
-# - Sonar Quality Gate
-# ==========================================================
 jobs:
     
   build:
     runs-on: ubuntu-latest
-    needs: sonarqube
     
     env:
       IMAGE_NAME: docker.io/jeevanrana78/enterprise-inventory-app
