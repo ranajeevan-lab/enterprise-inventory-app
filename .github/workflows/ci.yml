@@ -21,7 +21,7 @@ jobs:
         shell: powershell
         run: |
           Get-Location
-          Get-ChildItem
+          Get-ChildItem -Force
           Test-Path .\sonar-project.properties
 
       - name: SonarQube Scan
