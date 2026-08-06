@@ -11,6 +11,41 @@ on:
 # - Sonar Quality Gate
 # ==========================================================
 jobs:
+  sonarqube:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+    
+      - name: Verify sonar-project.properties
+        shell: powershell
+        run: |
+          Get-Location
+          Get-ChildItem -Force
+          Test-Path .\sonar-project.properties
+
+      - name: SonarQube Scan
+        shell: powershell
+        run: |
+          $args = @(
+            "-Dsonar.host.url=http://localhost:9000"
+            "-Dsonar.login=${{ secrets.SONAR_TOKEN }}"
+            "-Dsonar.projectKey=enterprise-inventory"
+            "-Dsonar.projectName=Enterprise Inventory"
+            "-Dsonar.projectVersion=1.0"
+            "-Dsonar.sources=backend"
+          )
+
+          & "C:\Tools\sonar-scanner-8.1.0.6389-windows-x64\bin\sonar-scanner.bat" @args
+
+          
+  #  - name: SonarQube Quality Gate
+  #    uses: SonarSource/sonarqube-quality-gate-action@v1
+  #    timeout-minutes: 5
+  #      env:
+  #        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  #         SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
     
   build:
     runs-on: ubuntu-latest
