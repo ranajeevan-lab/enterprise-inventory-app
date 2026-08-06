@@ -27,7 +27,7 @@ jobs:
       - name: SonarQube Scan
         shell: powershell
         run: |
-          & "C:\Tools\sonar-scanner-8.1.0.6389-windows-x64\bin\sonar-scanner.bat" `
+          & "C:\Tools\sonar-scanner-8.1.0.6389-windows-x64\bin\sonar-scanner.bat" -X `
             "-Dsonar.host.url=http://localhost:9000" `
             "-Dsonar.login=${{ secrets.SONAR_TOKEN }}" `
             "-Dproject.settings=sonar-project.properties"
