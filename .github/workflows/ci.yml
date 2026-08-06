@@ -17,11 +17,12 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v5
     
-      - name: Show Working Directory
+      - name: Verify sonar-project.properties
         shell: powershell
         run: |
-          pwd
-          dir
+          Get-Location
+          Get-ChildItem
+          Test-Path .\sonar-project.properties
 
       - name: SonarQube Scan
         shell: powershell
