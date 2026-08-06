@@ -16,6 +16,12 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v5
+    
+     - name: Show Working Directory
+        shell: powershell
+        run: |
+          pwd
+          dir
 
       - name: SonarQube Scan
         shell: powershell
