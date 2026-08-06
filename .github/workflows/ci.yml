@@ -6,8 +6,44 @@ on:
   push:
 
 jobs:
-  build:
+
+  sonarqube:
     runs-on: self-hosted
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+
+    # ==========================================================
+    # Code Quality
+    # - SonarQube Static Code Analysis
+    # - Sonar Quality Gate
+    # ==========================================================
+  
+  # ==========================================================
+# Code Quality
+# - SonarQube Static Code Analysis
+# - Sonar Quality Gate
+# ==========================================================
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        with:
+          projectBaseDir: backend
+
+      - name: SonarQube Quality Gate
+        uses: SonarSource/sonarqube-quality-gate-action@v1
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+    
+  build:
+    runs-on: ubuntu-latest
     
     env:
       IMAGE_NAME: docker.io/jeevanrana78/enterprise-inventory-app
@@ -22,6 +58,7 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v5
+
 
 # ==========================================================
 # Quality Gate
@@ -42,27 +79,6 @@ jobs:
           whoami
           docker --version
           php --version
-
-# ==========================================================
-# Code Quality
-# - SonarQube Static Code Analysis
-# - Sonar Quality Gate
-# ==========================================================
-
-      - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-        with:
-          projectBaseDir: backend
-
-      - name: SonarQube Quality Gate
-        uses: SonarSource/sonarqube-quality-gate-action@v1
-        timeout-minutes: 5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
 # ==========================================================
 # Build
