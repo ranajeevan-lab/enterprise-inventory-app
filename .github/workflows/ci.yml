@@ -5,8 +5,6 @@ name: Enterprise CI Pipeline
 on:
   push:
 
-
-
 # ==========================================================
 # Code Quality
 # - SonarQube Static Code Analysis
@@ -15,19 +13,18 @@ on:
 jobs:
   sonarqube:
     runs-on: self-hosted
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
 
-steps:
-  - name: Checkout Repository
-    uses: actions/checkout@v5
+      - name: SonarQube Scan
+        shell: powershell
+        run: |
+          & "C:\Tools\sonar-scanner-8.1.0.6389-windows-x64\bin\sonar-scanner.bat" `
+            "-Dsonar.host.url=http://localhost:9000" `
+            "-Dsonar.login=${{ secrets.SONAR_TOKEN }}" `
+            "-Dproject.settings=sonar-project.properties"
 
-  - name: SonarQube Scan
-    shell: powershell
-    run: |
-      & "C:\Tools\sonar-scanner-8.1.0.6389-windows-x64\bin\sonar-scanner.bat" `
-        "-Dsonar.host.url=http://localhost:9000" `
-        "-Dsonar.login=${{ secrets.SONAR_TOKEN }}" `
-        "-Dproject.settings=sonar-project.properties"
-        
           
       - name: SonarQube Quality Gate
         uses: SonarSource/sonarqube-quality-gate-action@v1
