@@ -24,9 +24,9 @@ jobs:
         shell: powershell
         run: |
           & "C:\Tools\sonar-scanner-8.1.0.6389-windows-x64\bin\sonar-scanner.bat" `
-            -Dsonar.host.url=http://localhost:9000 `
-            -Dsonar.token=${{ secrets.SONAR_TOKEN }} `
-            -Dsonar.projectBaseDir=backend
+          "-Dsonar.host.url=http://localhost:9000" `
+          "-Dsonar.token=${{ secrets.SONAR_TOKEN }}" `
+          "-Dsonar.projectBaseDir=backend"
       
       - name: SonarQube Quality Gate
         uses: SonarSource/sonarqube-quality-gate-action@v1
