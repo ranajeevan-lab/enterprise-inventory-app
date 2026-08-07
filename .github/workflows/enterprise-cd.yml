@@ -1,0 +1,138 @@
+# ==============================================================================
+# WORKFLOW : Enterprise CD Pipeline - Release
+#
+# PURPOSE
+#   Build, publish and prepare a release after code is merged to the main branch.
+#
+# RESPONSIBILITIES
+#   - Checkout source code
+#   - Build production Docker image
+#   - Publish Docker image
+#   - Sign container image
+#   - Update GitOps repository
+#
+# EXCLUDES
+#   - Code quality validation
+#   - Dockerfile linting
+#   - Security scanning
+#   - SBOM generation
+
+# TRIGGER
+#   - Push to main
+#   - Runs only after successful merge
+#
+# ==============================================================================
+
+name: Enterprise CD Pipeline - Release
+
+on:
+  push:
+    branches:
+      - main
+
+# ==============================================================================
+# JOBS
+# ==============================================================================
+  
+
+jobs:
+    
+  release:
+    runs-on: ubuntu-latest
+  
+  
+    env:
+      IMAGE_NAME: docker.io/jeevanrana78/enterprise-inventory-app
+      IMAGE_TAG: ${{ github.sha }}
+
+# ==========================================================
+# Source Control
+# - Checkout application source code
+# ==========================================================
+
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+
+# ==========================================================
+# Build
+# - Build Docker image
+# - Verify Docker image
+# ==========================================================
+
+- name: Build Docker Image
+  working-directory: backend
+  run: |
+    docker build \
+      -t ${{ env.IMAGE_NAME }}:latest \
+      -t ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} .
+
+- name: Verify Docker Images
+  run: |
+    docker images
+    docker image inspect ${{ env.IMAGE_NAME }}:latest
+    docker image inspect ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+
+# ==========================================================
+# Publish
+# - Docker Hub authentication
+# - Push latest image
+# - Push immutable Git SHA image
+# ==========================================================
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+
+      - name: Push Docker Images
+        run: |
+          docker push ${{ env.IMAGE_NAME }}:latest
+          docker push ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+
+# ==========================================================
+# GitOps Automation
+# - Clone GitOps repository
+# ==========================================================
+
+      - name: Clone GitOps Repository
+        run: |
+          git clone https://x-access-token:${{ secrets.GITOPS_PAT }}@github.com/ranajeevan-lab/enterprise-inventory-gitops.git
+
+      - name: Verify GitOps Repository
+        run: |
+          ls -la
+          ls -la enterprise-inventory-gitops
+
+# ==========================================================
+# Supply Chain Security
+# - Install Cosign
+# - Restore signing key
+# - Sign container image
+# - Verify image signature
+# ==========================================================
+
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+          
+      - name: Restore Cosign Private Key
+        run: |
+          echo "${{ secrets.COSIGN_PRIVATE_KEY }}" > cosign.key
+
+      - name: Sign Docker Image
+        env:
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        run: |
+          cosign sign \
+            --key cosign.key \
+            ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} \
+            --yes
+
+      - name: Verify Signature
+        run: |
+          cosign verify \
+            --key security/cosign.pub \
+           ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
