@@ -37,8 +37,9 @@
 </head>
 
 <body>
-
 <h2>Enterprise Inventory</h2>
+<p><strong>Release:</strong> Version 2 (GitOps Lab 07)</p>
+
 
 <nav>
 <a href="index.php">Home</a>
