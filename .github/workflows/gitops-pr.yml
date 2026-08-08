@@ -1,0 +1,136 @@
+name: GitOps Pull Request
+
+on:
+  workflow_call:
+
+    inputs:
+
+      image_tag:
+        description: "Docker image tag"
+        required: true
+        type: string
+
+      image_name:
+        description: "Docker image repository"
+        required: true
+        type: string
+
+      deploy_branch:
+        description: "GitOps deployment branch"
+        required: true
+        type: string
+
+      gitops_repository:
+        description: "GitOps repository"
+        required: true
+        type: string
+
+    secrets:
+
+      GITOPS_PAT:
+        required: true
+
+jobs:
+
+  gitops:
+
+    name: Update GitOps Repository
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+    # ==========================================================
+    # Clone GitOps Repository
+    # ==========================================================
+
+    - name: Clone GitOps Repository
+      run: |
+        git clone https://x-access-token:${{ secrets.GITOPS_PAT }}@github.com/${{ inputs.gitops_repository }}.git
+
+    # ==========================================================
+    # Checkout Deployment Branch
+    # ==========================================================
+
+    - name: Checkout Deployment Branch
+      run: |
+        cd enterprise-inventory-gitops
+
+        git checkout -B ${{ inputs.deploy_branch }}
+
+    # ==========================================================
+    # Configure Git
+    # ==========================================================
+
+    - name: Configure Git
+      run: |
+        cd enterprise-inventory-gitops
+
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+    # ==========================================================
+    # Update values.yaml
+    # ==========================================================
+
+    - name: Update values.yaml
+      run: |
+
+        cd enterprise-inventory-gitops
+
+        sed -i "s|tag:.*|tag: ${{ inputs.image_tag }}|g" helm/enterprise-inventory/values.yaml
+
+    # ==========================================================
+    # Verify values.yaml
+    # ==========================================================
+
+    - name: Verify values.yaml
+      run: |
+
+        cd enterprise-inventory-gitops
+
+        cat helm/enterprise-inventory/values.yaml
+
+    # ==========================================================
+    # Git Commit
+    # ==========================================================
+
+    - name: Git Commit
+      run: |
+
+        cd enterprise-inventory-gitops
+
+        git add .
+
+        git commit -m "chore(gitops): deploy image ${{ inputs.image_tag }}" || echo "No changes to commit"
+
+    # ==========================================================
+    # Push Branch
+    # ==========================================================
+
+    - name: Push Deployment Branch
+      run: |
+
+        cd enterprise-inventory-gitops
+
+        git push --set-upstream origin ${{ inputs.deploy_branch }}
+
+    # ==========================================================
+    # Create Pull Request
+    # ==========================================================
+
+    - name: Create GitOps Pull Request
+
+      env:
+        GH_TOKEN: ${{ secrets.GITOPS_PAT }}
+
+      run: |
+
+        cd enterprise-inventory-gitops
+
+        gh pr create \
+          --repo ${{ inputs.gitops_repository }} \
+          --base main \
+          --head ${{ inputs.deploy_branch }} \
+          --title "Deploy image ${{ inputs.image_tag }}" \
+          --body "Automated GitOps deployment for image ${{ inputs.image_tag }}"

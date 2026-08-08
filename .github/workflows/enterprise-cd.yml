@@ -44,6 +44,7 @@ jobs:
 
     env:
       IMAGE_NAME: docker.io/jeevanrana78/enterprise-inventory-app
+      DEPLOY_BRANCH: deploy/${{ env.IMAGE_TAG }}
       RELEASE_VERSION: v0.0.2
 
     steps:
@@ -146,7 +147,7 @@ jobs:
       - name: Checkout GitOps Branch
         run: |
           cd enterprise-inventory-gitops
-          git checkout feature/deploy
+          git checkout -B ${{ env.DEPLOY_BRANCH }}
 
       - name: Verify GitOps Repository
         run: |
@@ -183,8 +184,8 @@ jobs:
       - name: Configure Git
         run: |
           cd enterprise-inventory-gitops
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Commit GitOps Changes
         run: |
@@ -201,15 +202,35 @@ jobs:
       - name: Push GitOps Changes
         run: |
           cd enterprise-inventory-gitops
-          git push origin feature/deploy
+          git push --set-upstream origin ${{ env.DEPLOY_BRANCH }}
 
 # ==========================================================
 # GitOps Pull Request
 # PURPOSE
-# Create a Pull Request from feature/deploy to main.
+# Create a Pull Request from the deployment branch
+# to the main branch of the GitOps repository.
 #
-# NOTE
-# This section will be implemented in Lesson 11 using
-# the GitHub CLI (gh).
+# IMPLEMENTATION
+# Uses peter-evans/create-pull-request.
 # ==========================================================
+      - name: Create GitOps Pull Request
+        env:
+          GH_TOKEN: ${{ secrets.GITOPS_PAT }}
+        run: |
+          cd enterprise-inventory-gitops
 
+          gh pr create \
+            --repo ranajeevan-lab/enterprise-inventory-gitops \
+            --base main \
+            --head ${{ env.DEPLOY_BRANCH }} \
+            --title "Deploy image ${{ env.IMAGE_TAG }}" \
+            --body "
+            ## Enterprise GitOps Deployment
+
+            Application: enterprise-inventory-app
+
+            Image Tag: ${{ env.IMAGE_TAG }}
+
+            Repository: enterprise-inventory-app
+
+            
