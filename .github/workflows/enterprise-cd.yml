@@ -19,12 +19,12 @@
 #   - Generate SBOM
 #
 # TRIGGER
-#   - Push to the main branch
-#   - Starts only after a Pull Request has been merged
+#   - Executes after Pull Request merge into main
 #
 # REPOSITORY
 #   enterprise-inventory-app
 # ==============================================================================
+
 name: Enterprise CD Pipeline - Release
 
 on:
@@ -39,183 +39,277 @@ on:
 jobs:
 
   release:
+
+    name: Build, Publish and Prepare GitOps Release
+
     runs-on: ubuntu-latest
 
     env:
+
       IMAGE_NAME: docker.io/jeevanrana78/enterprise-inventory-app
-      DEPLOY_BRANCH: deploy/${{ env.IMAGE_TAG }}
+
       RELEASE_VERSION: v0.0.2
 
     steps:
 
-# ==========================================================
-# Source Control
-# PURPOSE
-# Retrieve the latest application source code.
-# ==========================================================
+# ==============================================================================
+# SOURCE CONTROL
+#
+# Checkout latest application source.
+# ==============================================================================
 
       - name: Checkout Repository
         uses: actions/checkout@v5
 
+# ==============================================================================
+# GENERATE IMAGE TAG
+#
+# Create immutable image tag using Git Commit SHA.
+#
+# Example
+#
+# IMAGE_TAG=f2c32c36
+# DEPLOY_BRANCH=deploy/f2c32c36
+# ==============================================================================
+
       - name: Generate Image Tag
+
         run: |
+
           echo "IMAGE_TAG=${GITHUB_SHA::8}" >> $GITHUB_ENV
 
-# ==========================================================
-# Build
-# PURPOSE
-# Build a fresh production Docker image.
-# Every GitHub Actions workflow runs on a new runner,
-# therefore the image must be rebuilt.
-# ==========================================================
+          echo "DEPLOY_BRANCH=deploy/${GITHUB_SHA::8}" >> $GITHUB_ENV
+
+# ==============================================================================
+# BUILD DOCKER IMAGE
+#
+# Every GitHub runner is ephemeral.
+# Therefore the image must be rebuilt for every release.
+# ==============================================================================
 
       - name: Build Docker Image
+
         working-directory: backend
+
         run: |
+
           docker build \
             -t ${{ env.IMAGE_NAME }}:latest \
             -t ${{ env.IMAGE_NAME }}:${{ env.RELEASE_VERSION }} \
             -t ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} .
 
+# ==============================================================================
+# VERIFY DOCKER IMAGE
+#
+# Ensure images were created successfully.
+# ==============================================================================
+
       - name: Verify Docker Images
+
         run: |
+
           docker images
+
           docker image inspect ${{ env.IMAGE_NAME }}:latest
+
           docker image inspect ${{ env.IMAGE_NAME }}:${{ env.RELEASE_VERSION }}
+
           docker image inspect ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
-# ==========================================================
-# Publish
-# PURPOSE
-# Authenticate with Docker Hub and publish both
-# the mutable (latest) and immutable (Git SHA) images.
-# ==========================================================
+# ==============================================================================
+# LOGIN TO DOCKER HUB
+#
+# Authenticate before publishing images.
+# ==============================================================================
 
       - name: Login to Docker Hub
+
         uses: docker/login-action@v3
+
         with:
+
           username: ${{ secrets.DOCKER_USERNAME }}
+
           password: ${{ secrets.DOCKER_TOKEN }}
 
+# ==============================================================================
+# PUSH DOCKER IMAGES
+#
+# Publish
+#
+# latest
+# release version
+# immutable git sha
+# ==============================================================================
+
       - name: Push Docker Images
+
         run: |
+
           docker push ${{ env.IMAGE_NAME }}:latest
+
           docker push ${{ env.IMAGE_NAME }}:${{ env.RELEASE_VERSION }}
+
           docker push ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
-# ==========================================================
-# Supply Chain Security
-# PURPOSE
-# Sign the published container image and verify the signature.
-# This guarantees image integrity before deployment.
-# ==========================================================
+# ==============================================================================
+# INSTALL COSIGN
+# ==============================================================================
 
       - name: Install Cosign
+
         uses: sigstore/cosign-installer@v3
 
+# ==============================================================================
+# RESTORE COSIGN PRIVATE KEY
+# ==============================================================================
+
       - name: Restore Cosign Private Key
+
         run: |
+
           echo "${{ secrets.COSIGN_PRIVATE_KEY }}" > cosign.key
 
+# ==============================================================================
+# SIGN CONTAINER IMAGE
+# ==============================================================================
+
       - name: Sign Docker Image
+
         env:
+
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+
         run: |
+
           cosign sign \
             --key cosign.key \
             ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} \
             --yes
 
+# ==============================================================================
+# VERIFY IMAGE SIGNATURE
+# ==============================================================================
+
       - name: Verify Image Signature
+
         run: |
+
           cosign verify \
             --key security/cosign.pub \
             ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
-# ==========================================================
-# GitOps Repository
-# PURPOSE
-# Clone the GitOps repository and switch to the deployment
-# branch where deployment changes are prepared.
-# ==========================================================
+# ==============================================================================
+# GITOPS REPOSITORY
+#
+# Clone the GitOps repository and prepare a deployment branch.
+# ==============================================================================
 
       - name: Clone GitOps Repository
+
         run: |
+
           git clone https://x-access-token:${{ secrets.GITOPS_PAT }}@github.com/ranajeevan-lab/enterprise-inventory-gitops.git
 
-      - name: Checkout GitOps Branch
+# ==============================================================================
+# CHECKOUT DEPLOYMENT BRANCH
+#
+# Create or switch to deployment branch.
+# ==============================================================================
+
+      - name: Checkout Deployment Branch
+
         run: |
+
           cd enterprise-inventory-gitops
+
           git checkout -B ${{ env.DEPLOY_BRANCH }}
 
-      - name: Verify GitOps Repository
-        run: |
-          ls -la enterprise-inventory-gitops
-
-
-# ==========================================================
-# GitOps Update
-# PURPOSE
-# Update the Helm values file with the newly published
-# immutable Docker image tag.
+# ==============================================================================
+# CONFIGURE GIT
 #
-# Modify this file:
-# enterprise-inventory-gitops/
-# └── enterprise-inventory/
-#     └── values.yaml
-# ==========================================================
-
-      - name: Update Helm Image Tag
-        run: |
-          sed -i 's|tag: ".*"|tag: "${{ env.IMAGE_TAG }}"|' \
-            enterprise-inventory-gitops/enterprise-inventory/values.yaml
-
-      - name: Verify Updated values.yaml
-        run: |
-          grep 'tag:' enterprise-inventory-gitops/enterprise-inventory/values.yaml
-
-# ==========================================================
-# GitOps Commit
-# PURPOSE
-# Commit deployment configuration changes.
-# ==========================================================
+# Configure GitHub Actions identity.
+# ==============================================================================
 
       - name: Configure Git
+
         run: |
+
           cd enterprise-inventory-gitops
+
           git config user.name "github-actions[bot]"
+
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+# ==============================================================================
+# UPDATE HELM VALUES
+#
+# Update the immutable Docker image tag inside values.yaml.
+# ==============================================================================
+
+      - name: Update Helm Image Tag
+
+        run: |
+
+          cd enterprise-inventory-gitops
+
+          sed -i "s|tag: \".*\"|tag: \"${{ env.IMAGE_TAG }}\"|g" \
+            enterprise-inventory/values.yaml
+
+# ==============================================================================
+# VERIFY UPDATED VALUES
+# ==============================================================================
+
+      - name: Verify Updated values.yaml
+
+        run: |
+
+          cd enterprise-inventory-gitops
+
+          grep "tag:" enterprise-inventory/values.yaml
+
+# ==============================================================================
+# COMMIT GITOPS CHANGES
+#
+# Commit only when values.yaml has changed.
+# ==============================================================================
+
       - name: Commit GitOps Changes
-        run: |
-          cd enterprise-inventory-gitops
-          git add .
-          git commit -m "chore(gitops): update image tag to ${{ env.IMAGE_TAG }}" || echo "No changes to commit"
 
-# ==========================================================
-# GitOps Push
-# PURPOSE
-# Push deployment changes to the feature/deploy branch.
-# ==========================================================
-
-      - name: Push GitOps Changes
         run: |
+
           cd enterprise-inventory-gitops
+
+          git add enterprise-inventory/values.yaml
+
+          git commit -m "chore(gitops): deploy image ${{ env.IMAGE_TAG }}" || echo "No changes to commit"
+
+# ==============================================================================
+# PUSH DEPLOYMENT BRANCH
+# ==============================================================================
+
+      - name: Push Deployment Branch
+
+        run: |
+
+          cd enterprise-inventory-gitops
+
           git push --set-upstream origin ${{ env.DEPLOY_BRANCH }}
 
-# ==========================================================
-# GitOps Pull Request
-# PURPOSE
-# Create a Pull Request from the deployment branch
-# to the main branch of the GitOps repository.
+# ==============================================================================
+# CREATE GITHUB PULL REQUEST
 #
-# IMPLEMENTATION
-# Uses peter-evans/create-pull-request.
-# ==========================================================
+# Create a Pull Request from deployment branch to main.
+# ==============================================================================
+
       - name: Create GitOps Pull Request
+
         env:
+
           GH_TOKEN: ${{ secrets.GITOPS_PAT }}
+
         run: |
+
           cd enterprise-inventory-gitops
 
           gh pr create \
@@ -223,13 +317,4 @@ jobs:
             --base main \
             --head ${{ env.DEPLOY_BRANCH }} \
             --title "Deploy image ${{ env.IMAGE_TAG }}" \
-            --body "
-            ## Enterprise GitOps Deployment
-
-            Application: enterprise-inventory-app
-
-            Image Tag: ${{ env.IMAGE_TAG }}
-
-            Repository: enterprise-inventory-app
-
-            
+            --body "Automated GitOps deployment for image ${{ env.IMAGE_TAG }}"
