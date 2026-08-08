@@ -310,7 +310,7 @@ jobs:
           gh auth status
 
 # ==============================================================================
-# CREATE GITOPS PULL REQUEST
+# CREATE GITOPS PULL REcQUEST
 # ==============================================================================
 
       - name: Create GitOps Pull Request
