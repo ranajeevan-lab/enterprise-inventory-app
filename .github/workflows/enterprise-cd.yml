@@ -25,7 +25,6 @@
 # REPOSITORY
 #   enterprise-inventory-app
 # ==============================================================================
-
 name: Enterprise CD Pipeline - Release
 
 on:

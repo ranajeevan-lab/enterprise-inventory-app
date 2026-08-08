@@ -8,7 +8,7 @@
 #   - Source code checkout
 #   - Dockerfile linting (Hadolint)
 #   - Docker image build verification
-#   - Container security scan (Trivy)
+#   - Container security scan (Trivy )
 #   - SBOM generation
 #   - Upload build artifacts
 #
