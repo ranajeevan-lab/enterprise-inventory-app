@@ -17,6 +17,7 @@
 # VERSION
 #   v0.0.3
 # ==============================================================================
+
 name: Release Please
 
 on:
@@ -39,5 +40,4 @@ jobs:
       - name: Run Release Please
         uses: googleapis/release-please-action@v4
         with:
-        feature/backend
           release-type: simple
