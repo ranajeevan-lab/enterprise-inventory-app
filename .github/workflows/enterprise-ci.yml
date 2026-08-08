@@ -42,7 +42,7 @@ jobs:
 
     env:
       IMAGE_NAME: docker.io/jeevanrana78/enterprise-inventory-app
-      IMAGE_TAG: ${{ github.sha }}
+   
 
     steps:
 
@@ -53,6 +53,10 @@ jobs:
 
       - name: Checkout Repository
         uses: actions/checkout@v5
+
+      - name: Generate Image Tag
+        run: |
+          echo "IMAGE_TAG=${GITHUB_SHA::8}" >> $GITHUB_ENV
 
 # ==========================================================
 # Quality Gate
@@ -86,6 +90,7 @@ jobs:
           docker build \
             -t ${{ env.IMAGE_NAME }}:latest \
             -t ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} .
+            
 
       - name: Verify Docker Images
         run: |
