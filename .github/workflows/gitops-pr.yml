@@ -1,92 +1,34 @@
-# ==============================================================================
-# WORKFLOW : GitOps Pull Request
-#
-# PURPOSE
-#   Update the GitOps repository after a successful application release.
-#
-# RESPONSIBILITIES
-#   - Clone GitOps repository
-#   - Checkout deployment branch
-#   - Update Helm values.yaml
-#   - Commit deployment changes
-#   - Push deployment branch
-#   - Create Pull Request
-#
-# CALLED FROM
-#   enterprise-cd.yml
-#
-# TYPE
-#   Reusable Workflow (workflow_call)
-# ==============================================================================
-
 name: GitOps Pull Request
 
 on:
-
-permissions:
-  contents: read
-  
   workflow_call:
 
     inputs:
 
-      # ========================================================================
-      # Application Information
-      # ========================================================================
-
-      application_name:
-        description: Application Name
+      image_tag:
+        description: "Docker image tag"
         required: true
         type: string
 
       image_name:
-        description: Docker Image Repository
-        required: true
-        type: string
-
-      image_tag:
-        description: Docker Image Tag
-        required: true
-        type: string
-
-      # ========================================================================
-      # GitOps Repository Information
-      # ========================================================================
-
-      gitops_owner:
-        description: GitHub Owner
-        required: true
-        type: string
-
-      gitops_repository:
-        description: GitOps Repository Name
+        description: "Docker image repository"
         required: true
         type: string
 
       deploy_branch:
-        description: Deployment Branch
+        description: "GitOps deployment branch"
         required: true
         type: string
 
-      values_file:
-        description: Helm values.yaml Path
+      gitops_repository:
+        description: "GitOps repository"
         required: true
-        type: string
-
-      base_branch:
-        description: Target Branch
-        required: false
-        default: main
         type: string
 
     secrets:
 
       GITOPS_PAT:
         required: true
-
-# ==============================================================================
-# JOBS
-# ==============================================================================
 
 jobs:
 
@@ -98,250 +40,97 @@ jobs:
 
     steps:
 
-    # ==========================================================================
+    # ==========================================================
     # Clone GitOps Repository
-    #
-    # PURPOSE
-    # Clone the GitOps repository using a Personal Access Token.
-    # ==========================================================================
+    # ==========================================================
 
     - name: Clone GitOps Repository
-
       run: |
+        git clone https://x-access-token:${{ secrets.GITOPS_PAT }}@github.com/${{ inputs.gitops_repository }}.git
 
-        git clone \
-        https://x-access-token:${{ secrets.GITOPS_PAT }}@github.com/${{ inputs.gitops_owner }}/${{ inputs.gitops_repository }}.git
-
-    # ==========================================================================
-    # Repository Directory
-    #
-    # PURPOSE
-    # Store the cloned repository directory name.
-    # ==========================================================================
-
-    - name: Set Repository Directory
-
-      run: |
-
-        echo "REPO_DIR=${{ inputs.gitops_repository }}" >> $GITHUB_ENV
-
-    # ==========================================================================
+    # ==========================================================
     # Checkout Deployment Branch
-    #
-    # PURPOSE
-    # Create or switch to the deployment branch.
-    # ==========================================================================
+    # ==========================================================
 
     - name: Checkout Deployment Branch
-
       run: |
+        cd enterprise-inventory-gitops
 
-        cd "$REPO_DIR"
+        git checkout -B ${{ inputs.deploy_branch }}
 
-        git checkout -B "${{ inputs.deploy_branch }}"
-
-    # ==========================================================================
+    # ==========================================================
     # Configure Git
-    #
-    # PURPOSE
-    # Configure Git identity for automated commits.
-    # ==========================================================================
+    # ==========================================================
 
     - name: Configure Git
-
       run: |
-
-        cd "$REPO_DIR"
+        cd enterprise-inventory-gitops
 
         git config user.name "github-actions[bot]"
-
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-    # ==========================================================================
-    # Validate Helm Values File
-    #
-    # PURPOSE
-    # Ensure the Helm values.yaml file exists before modification.
-    # ==========================================================================
+    # ==========================================================
+    # Update values.yaml
+    # ==========================================================
 
-    - name: Validate values.yaml
-
+    - name: Update values.yaml
       run: |
 
-        cd "$REPO_DIR"
+        cd enterprise-inventory-gitops
 
-        if [ ! -f "${{ inputs.values_file }}" ]; then
-          echo "ERROR: Helm values file not found."
-          exit 1
-        fi
+        sed -i "s|tag:.*|tag: ${{ inputs.image_tag }}|g" helm/enterprise-inventory/values.yaml
 
-        echo "Helm values file found."
+    # ==========================================================
+    # Verify values.yaml
+    # ==========================================================
 
-    # ==========================================================================
-    # Update Helm Image Tag
-    #
-    # PURPOSE
-    # Update the immutable Docker image tag in the Helm values file.
-    # ==========================================================================
-
-    - name: Update Helm Image Tag
-
+    - name: Verify values.yaml
       run: |
 
-        cd "$REPO_DIR"
+        cd enterprise-inventory-gitops
 
-        sed -i \
-        "s|tag: \".*\"|tag: \"${{ inputs.image_tag }}\"|" \
-        "${{ inputs.values_file }}"
+        cat helm/enterprise-inventory/values.yaml
 
-    # ==========================================================================
-    # Verify Updated values.yaml
-    #
-    # PURPOSE
-    # Display the updated image tag for verification.
-    # ==========================================================================
+    # ==========================================================
+    # Git Commit
+    # ==========================================================
 
-    - name: Verify Updated values.yaml
-
+    - name: Git Commit
       run: |
 
-        cd "$REPO_DIR"
-
-        grep "tag:" "${{ inputs.values_file }}"
-
-    # ==========================================================================
-    # Git Status
-    #
-    # PURPOSE
-    # Display repository status before commit.
-    # ==========================================================================
-
-    - name: Git Status
-
-      run: |
-
-        cd "$REPO_DIR"
-
-        git status
-
-    # ==========================================================================
-    # Commit Changes
-    #
-    # PURPOSE
-    # Commit deployment configuration changes.
-    # ==========================================================================
-
-    - name: Commit GitOps Changes
-
-      run: |
-
-        cd "$REPO_DIR"
+        cd enterprise-inventory-gitops
 
         git add .
 
-        git commit \
-        -m "chore(gitops): deploy ${{ inputs.application_name }} (${{ inputs.image_tag }})" \
-        || echo "No changes to commit."
+        git commit -m "chore(gitops): deploy image ${{ inputs.image_tag }}" || echo "No changes to commit"
 
-    # ==========================================================================
-    # Push Deployment Branch
-    #
-    # PURPOSE
-    # Push the deployment branch to the GitOps repository.
-    # ==========================================================================
+    # ==========================================================
+    # Push Branch
+    # ==========================================================
 
     - name: Push Deployment Branch
-
       run: |
 
-        cd "$REPO_DIR"
+        cd enterprise-inventory-gitops
 
-        git push \
-        --set-upstream origin \
-        "${{ inputs.deploy_branch }}"
+        git push --set-upstream origin ${{ inputs.deploy_branch }}
 
-    # ==========================================================================
-    # Check Existing Pull Request
-    #
-    # PURPOSE
-    # Avoid creating duplicate Pull Requests.
-    # ==========================================================================
-
-    - name: Check Existing Pull Request
-
-      id: pr_check
-
-      env:
-        GH_TOKEN: ${{ secrets.GITOPS_PAT }}
-
-      run: |
-
-        PR_NUMBER=$(gh pr list \
-          --repo "${{ inputs.gitops_owner }}/${{ inputs.gitops_repository }}" \
-          --head "${{ inputs.deploy_branch }}" \
-          --base "${{ inputs.base_branch }}" \
-          --json number \
-          --jq '.[0].number')
-
-        if [ -n "$PR_NUMBER" ]; then
-          echo "exists=true" >> "$GITHUB_OUTPUT"
-          echo "Existing Pull Request #$PR_NUMBER found."
-        else
-          echo "exists=false" >> "$GITHUB_OUTPUT"
-          echo "No existing Pull Request found."
-        fi
-
-    # ==========================================================================
+    # ==========================================================
     # Create Pull Request
-    #
-    # PURPOSE
-    # Create a Pull Request only if one does not already exist.
-    # ==========================================================================
+    # ==========================================================
 
     - name: Create GitOps Pull Request
 
-      if: steps.pr_check.outputs.exists == 'false'
-
       env:
         GH_TOKEN: ${{ secrets.GITOPS_PAT }}
 
       run: |
 
+        cd enterprise-inventory-gitops
+
         gh pr create \
-          --repo "${{ inputs.gitops_owner }}/${{ inputs.gitops_repository }}" \
-          --base "${{ inputs.base_branch }}" \
-          --head "${{ inputs.deploy_branch }}" \
-          --title "Deploy ${{ inputs.application_name }} (${{ inputs.image_tag }})" \
-          --body "
-## Enterprise GitOps Deployment
-
-### Application
-${{ inputs.application_name }}
-
-### Docker Repository
-${{ inputs.image_name }}
-
-### Image Tag
-${{ inputs.image_tag }}
-
-### Deployment Branch
-${{ inputs.deploy_branch }}
-
----
-This Pull Request was created automatically by the Enterprise CD Pipeline.
-"
-
-    # ==========================================================================
-    # Workflow Complete
-    #
-    # PURPOSE
-    # Display successful completion.
-    # ==========================================================================
-
-    - name: Workflow Complete
-
-      run: |
-
-        echo "========================================="
-        echo " GitOps Pull Request Workflow Completed "
-        echo "========================================="
+          --repo ${{ inputs.gitops_repository }} \
+          --base main \
+          --head ${{ inputs.deploy_branch }} \
+          --title "Deploy image ${{ inputs.image_tag }}" \
+          --body "Automated GitOps deployment for image ${{ inputs.image_tag }}"
