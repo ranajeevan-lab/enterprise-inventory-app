@@ -44,7 +44,6 @@ jobs:
 
     env:
       IMAGE_NAME: docker.io/jeevanrana78/enterprise-inventory-app
-      IMAGE_TAG: ${{ github.sha }}
 
     steps:
 
@@ -57,6 +56,9 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v5
 
+      - name: Generate Image Tag
+        run: |
+          echo "IMAGE_TAG=${GITHUB_SHA::8}" >> $GITHUB_ENV
 
 # ==========================================================
 # Build
@@ -145,3 +147,65 @@ jobs:
       - name: Verify GitOps Repository
         run: |
           ls -la enterprise-inventory-gitops
+
+
+# ==========================================================
+# GitOps Update
+# PURPOSE
+# Update the Helm values file with the newly published
+# immutable Docker image tag.
+#
+# Modify this file:
+# enterprise-inventory-gitops/
+# └── enterprise-inventory/
+#     └── values.yaml
+# ==========================================================
+
+      - name: Update Helm Image Tag
+        run: |
+          sed -i 's|tag: ".*"|tag: "${{ env.IMAGE_TAG }}"|' \
+            enterprise-inventory-gitops/enterprise-inventory/values.yaml
+
+      - name: Verify Updated values.yaml
+        run: |
+          grep 'tag:' enterprise-inventory-gitops/enterprise-inventory/values.yaml
+
+# ==========================================================
+# GitOps Commit
+# PURPOSE
+# Commit deployment configuration changes.
+# ==========================================================
+
+      - name: Configure Git
+        run: |
+          cd enterprise-inventory-gitops
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+      - name: Commit GitOps Changes
+        run: |
+          cd enterprise-inventory-gitops
+          git add .
+          git commit -m "chore(gitops): update image tag to ${{ env.IMAGE_TAG }}" || echo "No changes to commit"
+
+# ==========================================================
+# GitOps Push
+# PURPOSE
+# Push deployment changes to the feature/deploy branch.
+# ==========================================================
+
+      - name: Push GitOps Changes
+        run: |
+          cd enterprise-inventory-gitops
+          git push origin feature/deploy
+
+# ==========================================================
+# GitOps Pull Request
+# PURPOSE
+# Create a Pull Request from feature/deploy to main.
+#
+# NOTE
+# This section will be implemented in Lesson 11 using
+# the GitHub CLI (gh).
+# ==========================================================
+
