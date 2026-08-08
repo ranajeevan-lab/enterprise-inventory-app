@@ -297,15 +297,25 @@ jobs:
           git push --set-upstream origin ${{ env.DEPLOY_BRANCH }}
 
 # ==============================================================================
-# CREATE GITHUB PULL REQUEST
-#
-# Create a Pull Request from deployment branch to main.
+# VERIFY GITHUB CLI AUTHENTICATION (Temporary Debug Step)
+# ==============================================================================
+
+      - name: Verify GitHub CLI Authentication
+
+        env:
+          GH_TOKEN: ${{ secrets.GITOPS_PAT }}
+
+        run: |
+
+          gh auth status
+
+# ==============================================================================
+# CREATE GITOPS PULL REQUEST
 # ==============================================================================
 
       - name: Create GitOps Pull Request
 
         env:
-
           GH_TOKEN: ${{ secrets.GITOPS_PAT }}
 
         run: |
