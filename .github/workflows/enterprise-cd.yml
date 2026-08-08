@@ -100,6 +100,7 @@ jobs:
       - name: Push Docker Images
         run: |
           docker push ${{ env.IMAGE_NAME }}:latest
+          docker push ${{ env.IMAGE_NAME }}:${{ env.RELEASE_VERSION }}
           docker push ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
 # ==========================================================
