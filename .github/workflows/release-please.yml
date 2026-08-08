@@ -1,0 +1,43 @@
+# ==============================================================================
+# WORKFLOW : Release Please
+#
+# PURPOSE
+#   Automatically manages semantic versioning and GitHub Releases.
+#
+# RESPONSIBILITIES
+#   - Analyze merged commits
+#   - Determine next semantic version
+#   - Create Release Pull Request
+#   - Create Git Tag
+#   - Publish GitHub Release
+#
+# TRIGGER
+#   - Push to main branch
+#
+# VERSION
+#   v0.0.3
+# ==============================================================================
+
+name: Release Please
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+
+  release-please:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Run Release Please
+        uses: googleapis/release-please-action@v4
+        with:
+         release-type: github
